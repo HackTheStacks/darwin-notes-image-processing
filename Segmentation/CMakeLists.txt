@@ -1,0 +1,2 @@
+add_executable(OtsuThresholdImageFilter OtsuThresholdImageFilter.cxx)
+target_link_libraries(OtsuThresholdImageFilter ${ITK_LIBRARIES})
