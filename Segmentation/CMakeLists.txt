@@ -4,3 +4,5 @@ target_link_libraries(ExtractLargestConnectedComponentFromBinaryImage ${ITK_LIBR
 add_executable(OtsuThresholdImageFilter OtsuThresholdImageFilter.cxx)
 target_link_libraries(OtsuThresholdImageFilter ${ITK_LIBRARIES})
 
+add_executable(ImageLinearIteratorWithIndex ImageLinearIteratorWithIndex.cxx)
+target_link_libraries(ImageLinearIteratorWithIndex ${ITK_LIBRARIES})
