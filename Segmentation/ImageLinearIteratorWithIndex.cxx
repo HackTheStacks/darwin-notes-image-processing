@@ -60,10 +60,10 @@ int main( int argc, char *argv[] )
 
   std::vector<unsigned short> counter;
 
+  unsigned short line = 0;
   for ( inputIt.GoToBegin(); ! inputIt.IsAtEnd(); inputIt.NextLine() )
     {
     unsigned short count = 0;
-    unsigned short line = 0;
     inputIt.GoToBeginOfLine();
     while ( ! inputIt.IsAtEndOfLine() )
       {
@@ -72,10 +72,10 @@ int main( int argc, char *argv[] )
         ++count;
         }
       ++inputIt;
-      ++line;
       }
     counter.push_back(count);
     std::cout << line << " " << count << std::endl;
+    ++line;
     }
 
   return EXIT_SUCCESS;
