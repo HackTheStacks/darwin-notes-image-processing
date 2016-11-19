@@ -1,6 +1,9 @@
 add_executable(ExtractLargestConnectedComponentFromBinaryImage ExtractLargestConnectedComponentFromBinaryImage.cxx)
 target_link_libraries(ExtractLargestConnectedComponentFromBinaryImage ${ITK_LIBRARIES})
 
+add_executable(ExtractConnectedComponentFromBinaryImage ExtractConnectedComponentFromBinaryImage.cxx)
+target_link_libraries(ExtractConnectedComponentFromBinaryImage ${ITK_LIBRARIES})
+
 add_executable(OtsuThresholdImageFilter OtsuThresholdImageFilter.cxx)
 target_link_libraries(OtsuThresholdImageFilter ${ITK_LIBRARIES})
 
