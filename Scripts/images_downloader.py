@@ -25,7 +25,7 @@ for row in csvreader:
 			image_name = image_name[:space_pos] + image_name[space_pos + 2:]
 		url = base_url + eid + "_" + image_name 
 		if urllib.urlopen(url).getcode() == 404: # Store errors
-			log_file.write(row[0] + " " + row[2])
+			log_file.write(row[0] + " " + row[1])
 			error_count +=1
 		else:
 			urllib.urlretrieve(url, str(sys.argv[2]) + image_name)
