@@ -140,5 +140,66 @@ int main( int argc, char *argv[] )
   std::cout << "leftIndex " << leftIndex << std::endl;
   std::cout << "rightIndex " << rightIndex << std::endl;
 
+  std::vector< unsigned short > north;
+  std::vector< unsigned short > south;
+
+  unsigned short xpos = 0;
+  ConstIteratorType rangeIt( inputImage, inputImage->GetRequestedRegion() );
+  rangeIt.SetDirection(1); // walk faster along the vertical direction.
+
+  for ( rangeIt.GoToBegin(); ! rangeIt.IsAtEnd(); rangeIt.NextLine(), ++xpos )
+    {
+    unsigned short bottom = 0;
+    unsigned short top = 0;
+    rangeIt.GoToBeginOfLine();
+    while ( ! rangeIt.IsAtEndOfLine() )
+      {
+      PixelType value = rangeIt.Get();
+      if (value == 255 ) {
+        if ( bottom == 0 ) {
+          bottom = rangeIt.GetIndex()[1];  
+          }
+        top = rangeIt.GetIndex()[1];  
+        }
+      ++rangeIt;
+      }
+
+    if (xpos >= leftIndex[0] && xpos <= rightIndex[0]) {
+      north.push_back(top);
+      south.push_back(bottom);
+      }
+    }
+
+  std::string northFilename(argv[1]);
+  northFilename.erase(northFilename.end()-4, northFilename.end());
+  northFilename += "_north.csv";
+
+  std::string southFilename(argv[1]);
+  southFilename.erase(southFilename.end()-4, southFilename.end());
+  southFilename += "_south.csv";
+
+  std::cout << northFilename << std::endl;
+  std::cout << southFilename << std::endl;
+  
+  std::ofstream northFile(northFilename.c_str());
+  std::vector<unsigned short>::const_iterator curveIt = north.begin();
+  xpos = leftIndex[0];
+  while (curveIt != north.end()) {
+    northFile << xpos << ", " << *curveIt << std::endl;
+    ++xpos;
+    ++curveIt;
+  }
+  northFile.close();
+ 
+  std::ofstream southFile(southFilename.c_str());
+  curveIt = south.begin();
+  xpos = leftIndex[0];
+  while (curveIt != south.end()) {
+    southFile << xpos << ", " << *curveIt << std::endl;
+    ++xpos;
+    ++curveIt;
+  }
+  southFile.close();
+
   return EXIT_SUCCESS;
 }
