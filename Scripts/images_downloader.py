@@ -32,7 +32,7 @@ for row in csvreader:
 	total_count += 1
 links_file.close()
 
-log_file.write("ERRORS: ", error_count)
-log_file.write("TOTAL: ", total_count)
+log_file.write(error_count)
+log_file.write(total_count)
 
 log_file.close()
