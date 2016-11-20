@@ -21,7 +21,6 @@
 #include "itkConnectedComponentImageFilter.h"
 #include "itkImage.h"
 #include "itkImageFileReader.h"
-#include "itkImageFileWriter.h"
 #include "itkImageLinearIteratorWithIndex.h"
 #include "itkImageRegionIterator.h"
 #include "itkOtsuMultipleThresholdsImageFilter.h"
@@ -31,12 +30,15 @@
 
 int main( int argc, char * argv[] )
 {
-  if( argc < 3 )
+  if( argc < 2 )
     {
     std::cerr << "Usage: " << argv[0];
-    std::cerr << " inputImageFile outputImageFile ";
+    std::cerr << " inputImageFile";
     return EXIT_FAILURE;
     }
+
+  std::string inputImageDir = "/data/amnh/darwin/image";
+  std::string outputCurvesDir = "/data/amnh/darwin/image_csvs";
 
   typedef  unsigned char  InputPixelType;
   typedef  unsigned char  OutputPixelType;
@@ -49,11 +51,12 @@ int main( int argc, char * argv[] )
                InputImageType, OutputImageType >  OtsuFilterType;
 
   typedef itk::ImageFileReader< InputImageType >  ReaderType;
-  typedef itk::ImageFileWriter< OutputImageType >  WriterType;
 
   ReaderType::Pointer reader = ReaderType::New();
   OtsuFilterType::Pointer otsuFilter = OtsuFilterType::New();
-  reader->SetFileName( argv[1] );
+
+  std::string inputFilename = inputImageDir + argv[1];
+  reader->SetFileName(inputFilename);
 
   otsuFilter->SetInput( reader->GetOutput() );
 
@@ -73,7 +76,6 @@ int main( int argc, char * argv[] )
     }
 
   int threshold = otsuFilter->GetThreshold();
-  std::cout << "Threshold = " << threshold << std::endl;
 
   typedef unsigned short ComponentPixelType;
   typedef itk::Image< ComponentPixelType, Dimension >  ComponentImageType;
@@ -84,8 +86,6 @@ int main( int argc, char * argv[] )
   ConnectedComponentImageFilterType::Pointer connected = ConnectedComponentImageFilterType::New ();
   connected->SetInput(otsuFilter->GetOutput());
   connected->Update();
-
-  std::cout << "Number of objects: " << connected->GetObjectCount() << std::endl;
 
   typedef itk::RelabelComponentImageFilter<
                ComponentImageType, ComponentImageType >  RelabelFilterType;
@@ -103,18 +103,17 @@ int main( int argc, char * argv[] )
 
   thresholder->SetInput( relabeler->GetOutput() );
 
-  WriterType::Pointer writer = WriterType::New();
-  writer->SetFileName( argv[2] );
-  writer->SetInput( thresholder->GetOutput() );
-  writer->Update();
-
-  std::cout << "Largest object of " << connected->GetObjectCount() << " objects";
-
   typedef std::vector< itk::SizeValueType > SizesInPixelsType;
   const SizesInPixelsType & sizesInPixels = relabeler->GetSizeOfObjectsInPixels();
   std::cout << "Number of pixels in largest component = " << sizesInPixels[0] << std::endl;
   std::cout << "Number of pixels in second  component = " << sizesInPixels[1] << std::endl;
 
+  if ( sizesInPixels[1] == 0 ) {
+    std::cerr << "Ruler was not detected" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  const double linearScale = std::sqrt(sizesInPixels[1]);
 
   //
   // Compute integrated projection and use Otsu to find borders.
@@ -165,7 +164,6 @@ int main( int argc, char * argv[] )
     outputIt.Set(count);
     ++outputIt;
     counter.push_back(count);
-    std::cout << line << " " << count << std::endl;
     ++line;
     }
 
@@ -203,9 +201,6 @@ int main( int argc, char * argv[] )
   leftIndex[0] += 100;
   rightIndex[0] -= 100;
 
-  std::cout << "leftIndex " << leftIndex << std::endl;
-  std::cout << "rightIndex " << rightIndex << std::endl;
-
   std::vector< unsigned short > north;
   std::vector< unsigned short > south;
 
@@ -236,22 +231,19 @@ int main( int argc, char * argv[] )
       }
     }
 
-  std::string northFilename(argv[1]);
+  std::string northFilename = outputCurvesDir + argv[1];
   northFilename.erase(northFilename.end()-4, northFilename.end());
   northFilename += "_north.csv";
 
-  std::string southFilename(argv[1]);
+  std::string southFilename = outputCurvesDir + argv[1];
   southFilename.erase(southFilename.end()-4, southFilename.end());
   southFilename += "_south.csv";
 
-  std::cout << northFilename << std::endl;
-  std::cout << southFilename << std::endl;
-  
   std::ofstream northFile(northFilename.c_str());
   std::vector<unsigned short>::const_iterator curveIt = north.begin();
   xpos = leftIndex[0];
   while (curveIt != north.end()) {
-    northFile << xpos << ", " << *curveIt << std::endl;
+    northFile << xpos/linearScale << ", " << *curveIt/linearScale << std::endl;
     ++xpos;
     ++curveIt;
   }
@@ -261,7 +253,7 @@ int main( int argc, char * argv[] )
   curveIt = south.begin();
   xpos = leftIndex[0];
   while (curveIt != south.end()) {
-    southFile << xpos << ", " << *curveIt << std::endl;
+    southFile << xpos/linearScale << ", " << *curveIt/linearScale << std::endl;
     ++xpos;
     ++curveIt;
   }
