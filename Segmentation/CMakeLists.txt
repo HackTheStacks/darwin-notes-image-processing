@@ -1,6 +1,9 @@
 add_executable(ExtractLargestConnectedComponentFromBinaryImage ExtractLargestConnectedComponentFromBinaryImage.cxx)
 target_link_libraries(ExtractLargestConnectedComponentFromBinaryImage ${ITK_LIBRARIES})
 
+add_executable(ImageToEdges ImageToEdges.cxx)
+target_link_libraries(ImageToEdges ${ITK_LIBRARIES})
+
 add_executable(ExtractConnectedComponentFromBinaryImage ExtractConnectedComponentFromBinaryImage.cxx)
 target_link_libraries(ExtractConnectedComponentFromBinaryImage ${ITK_LIBRARIES})
 
