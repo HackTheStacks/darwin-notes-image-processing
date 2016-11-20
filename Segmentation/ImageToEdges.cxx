@@ -37,8 +37,8 @@ int main( int argc, char * argv[] )
     return EXIT_FAILURE;
     }
 
-  std::string inputImageDir = "/data/amnh/darwin/image";
-  std::string outputCurvesDir = "/data/amnh/darwin/image_csvs";
+  std::string inputImageDir = "/data/amnh/darwin/images/";
+  std::string outputCurvesDir = "/data/amnh/darwin/image_csvs/";
 
   typedef  unsigned char  InputPixelType;
   typedef  unsigned char  OutputPixelType;
@@ -56,6 +56,8 @@ int main( int argc, char * argv[] )
   OtsuFilterType::Pointer otsuFilter = OtsuFilterType::New();
 
   std::string inputFilename = inputImageDir + argv[1];
+  std::cout << "input filename " << inputFilename << std::endl;
+
   reader->SetFileName(inputFilename);
 
   otsuFilter->SetInput( reader->GetOutput() );
@@ -63,8 +65,8 @@ int main( int argc, char * argv[] )
   const OutputPixelType outsideValue = 255;
   const OutputPixelType insideValue  = 0;
 
-  otsuFilter->SetOutsideValue( outsideValue );
-  otsuFilter->SetInsideValue(  insideValue  );
+  otsuFilter->SetOutsideValue(outsideValue);
+  otsuFilter->SetInsideValue(insideValue);
 
   try
     {
@@ -98,21 +100,28 @@ int main( int argc, char * argv[] )
   ThresholdFilterType::Pointer thresholder = ThresholdFilterType::New();
   thresholder->SetLowerThreshold(1);
   thresholder->SetUpperThreshold(1);
-  thresholder->SetOutsideValue(0);
-  thresholder->SetInsideValue(255);
+  thresholder->SetOutsideValue(outsideValue);
+  thresholder->SetInsideValue(insideValue);
 
   thresholder->SetInput( relabeler->GetOutput() );
+  thresholder->Update();
 
   typedef std::vector< itk::SizeValueType > SizesInPixelsType;
   const SizesInPixelsType & sizesInPixels = relabeler->GetSizeOfObjectsInPixels();
-  std::cout << "Number of pixels in largest component = " << sizesInPixels[0] << std::endl;
-  std::cout << "Number of pixels in second  component = " << sizesInPixels[1] << std::endl;
 
-  if ( sizesInPixels[1] == 0 ) {
+  if ( sizesInPixels.size() == 0 ) {
+    std::cerr << "No connected component was detected" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  std::cout << "Number of pixels in largest component = " << sizesInPixels[0] << std::endl;
+
+  if ( sizesInPixels.size() == 1 || sizesInPixels[1] == 0 ) {
     std::cerr << "Ruler was not detected" << std::endl;
     return EXIT_FAILURE;
   }
 
+  std::cout << "Number of pixels in second  component = " << sizesInPixels[1] << std::endl;
   const double linearScale = std::sqrt(sizesInPixels[1]);
 
   //
@@ -238,6 +247,9 @@ int main( int argc, char * argv[] )
   std::string southFilename = outputCurvesDir + argv[1];
   southFilename.erase(southFilename.end()-4, southFilename.end());
   southFilename += "_south.csv";
+
+  std::cout << "northFilename " << northFilename << std::endl;
+  std::cout << "southFilename " << southFilename << std::endl;
 
   std::ofstream northFile(northFilename.c_str());
   std::vector<unsigned short>::const_iterator curveIt = north.begin();
