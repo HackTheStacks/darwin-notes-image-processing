@@ -16,22 +16,25 @@
  *
  *=========================================================================*/
 
-#include "itkOtsuThresholdImageFilter.h"
+
+#include "itkBinaryThresholdImageFilter.h"
+#include "itkConnectedComponentImageFilter.h"
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
-#include "itkBinaryThresholdImageFilter.h"
-#include "itkConnectedComponentImageFilter.h"
+#include "itkImageLinearIteratorWithIndex.h"
+#include "itkImageRegionIterator.h"
+#include "itkOtsuMultipleThresholdsImageFilter.h"
+#include "itkOtsuThresholdImageFilter.h"
 #include "itkRelabelComponentImageFilter.h"
 #include "itkRescaleIntensityImageFilter.h"
 
 int main( int argc, char * argv[] )
 {
-  if( argc < 5 )
+  if( argc < 3 )
     {
     std::cerr << "Usage: " << argv[0];
     std::cerr << " inputImageFile outputImageFile ";
-    std::cerr << " insideValue    outsideValue   "  << std::endl;
     return EXIT_FAILURE;
     }
 
@@ -54,8 +57,8 @@ int main( int argc, char * argv[] )
 
   otsuFilter->SetInput( reader->GetOutput() );
 
-  const OutputPixelType outsideValue = atoi( argv[3] );
-  const OutputPixelType insideValue  = atoi( argv[4] );
+  const OutputPixelType outsideValue = 255;
+  const OutputPixelType insideValue  = 0;
 
   otsuFilter->SetOutsideValue( outsideValue );
   otsuFilter->SetInsideValue(  insideValue  );
@@ -111,6 +114,158 @@ int main( int argc, char * argv[] )
   const SizesInPixelsType & sizesInPixels = relabeler->GetSizeOfObjectsInPixels();
   std::cout << "Number of pixels in largest component = " << sizesInPixels[0] << std::endl;
   std::cout << "Number of pixels in second  component = " << sizesInPixels[1] << std::endl;
+
+
+  //
+  // Compute integrated projection and use Otsu to find borders.
+  // 
+  typedef itk::ImageLinearConstIteratorWithIndex< InputImageType > ConstIteratorType;
+
+  InputImageType::ConstPointer inputImage = thresholder->GetOutput();
+
+  const unsigned int CountDimension = 1;
+  typedef unsigned short CountPixelType;
+  typedef itk::Image< CountPixelType, CountDimension > CountImageType;
+  CountImageType::IndexType start;
+  start[0] = 0;
+  CountImageType::SizeType  size;
+  size[0]  = inputImage->GetRequestedRegion().GetSize()[0];
+
+  CountImageType::RegionType region;
+  region.SetSize( size );
+  region.SetIndex( start );
+
+  CountImageType::Pointer countImage = CountImageType::New();
+  countImage->SetRegions( region );
+  countImage->Allocate();
+
+  typedef itk::ImageRegionIterator< CountImageType > CountIteratorType;
+  CountIteratorType outputIt( countImage, countImage->GetLargestPossibleRegion() );
+  outputIt.GoToBegin();
+
+  ConstIteratorType inputIt( inputImage, inputImage->GetRequestedRegion() );
+
+  inputIt.SetDirection(1); // walk faster along the vertical direction.
+
+  std::vector<unsigned short> counter;
+
+  unsigned short line = 0;
+  for ( inputIt.GoToBegin(); ! inputIt.IsAtEnd(); inputIt.NextLine() )
+    {
+    unsigned short count = 0;
+    inputIt.GoToBeginOfLine();
+    while ( ! inputIt.IsAtEndOfLine() )
+      {
+      InputPixelType value = inputIt.Get();
+      if (value == 255 ) {
+        ++count;
+        }
+      ++inputIt;
+      }
+    outputIt.Set(count);
+    ++outputIt;
+    counter.push_back(count);
+    std::cout << line << " " << count << std::endl;
+    ++line;
+    }
+
+  CountImageType::IndexType leftIndex;
+  CountImageType::IndexType rightIndex;
+
+  typedef itk::OtsuMultipleThresholdsImageFilter< 
+    CountImageType, CountImageType >  OtsuMultipleFilterType;
+  OtsuMultipleFilterType::Pointer otsuMultipleFilter = OtsuMultipleFilterType::New();
+  otsuMultipleFilter->SetInput( countImage );
+  otsuMultipleFilter->SetNumberOfThresholds(2);
+  otsuMultipleFilter->Update();
+  CountImageType::Pointer otsuOutput = otsuMultipleFilter->GetOutput();
+
+  CountIteratorType bandsIt( otsuOutput, otsuOutput->GetLargestPossibleRegion() );
+  bandsIt.GoToBegin();
+  CountPixelType currentValue = bandsIt.Get();
+  while (!bandsIt.IsAtEnd()) {
+    if (bandsIt.Get() != currentValue) {
+      leftIndex = bandsIt.GetIndex();
+      currentValue = bandsIt.Get();
+      break;
+      }
+    ++bandsIt;
+    }
+  while (!bandsIt.IsAtEnd()) {
+    if (bandsIt.Get() != currentValue) {
+      rightIndex = bandsIt.GetIndex();
+      break;
+      }
+    ++bandsIt;
+    }
+
+  // Add a safety band
+  leftIndex[0] += 100;
+  rightIndex[0] -= 100;
+
+  std::cout << "leftIndex " << leftIndex << std::endl;
+  std::cout << "rightIndex " << rightIndex << std::endl;
+
+  std::vector< unsigned short > north;
+  std::vector< unsigned short > south;
+
+  unsigned short xpos = 0;
+  ConstIteratorType rangeIt( inputImage, inputImage->GetRequestedRegion() );
+  rangeIt.SetDirection(1); // walk faster along the vertical direction.
+
+  for ( rangeIt.GoToBegin(); ! rangeIt.IsAtEnd(); rangeIt.NextLine(), ++xpos )
+    {
+    unsigned short bottom = 0;
+    unsigned short top = 0;
+    rangeIt.GoToBeginOfLine();
+    while ( ! rangeIt.IsAtEndOfLine() )
+      {
+      InputPixelType value = rangeIt.Get();
+      if (value == 255 ) {
+        if ( bottom == 0 ) {
+          bottom = rangeIt.GetIndex()[1];  
+          }
+        top = rangeIt.GetIndex()[1];  
+        }
+      ++rangeIt;
+      }
+
+    if (xpos >= leftIndex[0] && xpos <= rightIndex[0]) {
+      north.push_back(top);
+      south.push_back(bottom);
+      }
+    }
+
+  std::string northFilename(argv[1]);
+  northFilename.erase(northFilename.end()-4, northFilename.end());
+  northFilename += "_north.csv";
+
+  std::string southFilename(argv[1]);
+  southFilename.erase(southFilename.end()-4, southFilename.end());
+  southFilename += "_south.csv";
+
+  std::cout << northFilename << std::endl;
+  std::cout << southFilename << std::endl;
+  
+  std::ofstream northFile(northFilename.c_str());
+  std::vector<unsigned short>::const_iterator curveIt = north.begin();
+  xpos = leftIndex[0];
+  while (curveIt != north.end()) {
+    northFile << xpos << ", " << *curveIt << std::endl;
+    ++xpos;
+    ++curveIt;
+  }
+  northFile.close();
+ 
+  std::ofstream southFile(southFilename.c_str());
+  curveIt = south.begin();
+  xpos = leftIndex[0];
+  while (curveIt != south.end()) {
+    southFile << xpos << ", " << *curveIt << std::endl;
+    ++xpos;
+    ++curveIt;
+  }
+  southFile.close();
 
   return EXIT_SUCCESS;
 }
