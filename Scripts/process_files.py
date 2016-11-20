@@ -1,11 +1,11 @@
+#!/usr/bin/python
 import os
 from subprocess import call
 
-inputpath = 'originals'
-outputpath = 'segmentations'
+inputpath = '/data/amnh/darwin/images'
+segment_exe = '/home/luis_ibanez/bin/darwin-notes-image-processing/Release/Segmentation/ImageToEdges'
 
 for filename in os.listdir(inputpath):
-    current = os.path.join(inputpath, filename)
-    if os.path.isfile(current):
-        call([segment_exe, current, result])
+    print filename
+    call([segment_exe, filename])
 
