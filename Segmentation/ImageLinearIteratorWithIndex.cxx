@@ -19,6 +19,8 @@
 #include "itkImage.h"
 #include "itkImageLinearIteratorWithIndex.h"
 #include "itkImageFileReader.h"
+#include "itkImageRegionIterator.h"
+#include "itkOtsuMultipleThresholdsImageFilter.h"
 
 int main( int argc, char *argv[] )
 {
@@ -54,6 +56,26 @@ int main( int argc, char *argv[] )
     return EXIT_FAILURE;
     }
 
+  const unsigned int CountDimension = 1;
+  typedef unsigned short CountPixelType;
+  typedef itk::Image< CountPixelType, CountDimension > CountImageType;
+  CountImageType::IndexType start;
+  start[0] = 0;
+  CountImageType::SizeType  size;
+  size[0]  = inputImage->GetRequestedRegion().GetSize()[0];
+
+  CountImageType::RegionType region;
+  region.SetSize( size );
+  region.SetIndex( start );
+
+  CountImageType::Pointer countImage = CountImageType::New();
+  countImage->SetRegions( region );
+  countImage->Allocate();
+
+  typedef itk::ImageRegionIterator< CountImageType > CountIteratorType;
+  CountIteratorType outputIt( countImage, countImage->GetLargestPossibleRegion() );
+  outputIt.GoToBegin();
+
   ConstIteratorType inputIt( inputImage, inputImage->GetRequestedRegion() );
 
   inputIt.SetDirection(1); // walk faster along the vertical direction.
@@ -73,10 +95,50 @@ int main( int argc, char *argv[] )
         }
       ++inputIt;
       }
+    outputIt.Set(count);
+    ++outputIt;
     counter.push_back(count);
     std::cout << line << " " << count << std::endl;
     ++line;
     }
+
+  CountImageType::IndexType leftIndex;
+  CountImageType::IndexType rightIndex;
+
+  typedef itk::OtsuMultipleThresholdsImageFilter< 
+    CountImageType, CountImageType >  OtsuFilterType;
+  OtsuFilterType::Pointer otsuFilter = OtsuFilterType::New();
+  otsuFilter->SetInput( countImage );
+  // otsuFilter->SetNumberOfHistogramBins(100);
+  otsuFilter->SetNumberOfThresholds(2);
+  otsuFilter->Update();
+  CountImageType::Pointer otsuOutput = otsuFilter->GetOutput();
+
+  CountIteratorType bandsIt( otsuOutput, otsuOutput->GetLargestPossibleRegion() );
+  bandsIt.GoToBegin();
+  CountPixelType currentValue = bandsIt.Get();
+  while (!bandsIt.IsAtEnd()) {
+    if (bandsIt.Get() != currentValue) {
+      leftIndex = bandsIt.GetIndex();
+      currentValue = bandsIt.Get();
+      break;
+    }
+    ++bandsIt;
+  }
+  while (!bandsIt.IsAtEnd()) {
+    if (bandsIt.Get() != currentValue) {
+      rightIndex = bandsIt.GetIndex();
+      break;
+    }
+    ++bandsIt;
+  }
+
+  // Add a safety band
+  leftIndex[0] += 100;
+  rightIndex[0] -= 100;
+
+  std::cout << "leftIndex " << leftIndex << std::endl;
+  std::cout << "rightIndex " << rightIndex << std::endl;
 
   return EXIT_SUCCESS;
 }
