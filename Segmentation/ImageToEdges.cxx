@@ -21,6 +21,7 @@
 #include "itkConnectedComponentImageFilter.h"
 #include "itkImage.h"
 #include "itkImageFileReader.h"
+#include "itkImageFileWriter.h"
 #include "itkImageLinearIteratorWithIndex.h"
 #include "itkImageRegionIterator.h"
 #include "itkOtsuMultipleThresholdsImageFilter.h"
@@ -37,8 +38,11 @@ int main( int argc, char * argv[] )
     return EXIT_FAILURE;
     }
 
-  std::string inputImageDir = "/data/amnh/darwin/images/";
-  std::string outputCurvesDir = "/data/amnh/darwin/image_csvs/";
+  // baseImageDir in cloud server: "/data/amnh/darwin"
+  std::string baseImageDir = "/home/ibanez/data/amnh/darwin_notes/";
+  std::string inputImageDir = baseImageDir + "images/";
+  std::string segmentationDir = baseImageDir + "segmentations/";
+  std::string outputCurvesDir = baseImageDir + "image_csvs/";
 
   typedef  unsigned char  InputPixelType;
   typedef  unsigned char  OutputPixelType;
@@ -61,12 +65,8 @@ int main( int argc, char * argv[] )
   reader->SetFileName(inputFilename);
 
   otsuFilter->SetInput( reader->GetOutput() );
-
-  const OutputPixelType outsideValue = 255;
-  const OutputPixelType insideValue  = 0;
-
-  otsuFilter->SetOutsideValue(outsideValue);
-  otsuFilter->SetInsideValue(insideValue);
+  otsuFilter->SetOutsideValue(255);
+  otsuFilter->SetInsideValue(0);
 
   try
     {
@@ -75,9 +75,20 @@ int main( int argc, char * argv[] )
   catch( itk::ExceptionObject & excp )
     {
     std::cerr << "Exception thrown " << excp << std::endl;
+    return EXIT_FAILURE;
     }
 
   int threshold = otsuFilter->GetThreshold();
+  std::cout << "Threshold = " << threshold << std::endl;
+
+  typedef itk::ImageFileWriter< OutputImageType >  WriterType;
+  WriterType::Pointer writer = WriterType::New();
+  writer->SetInput( otsuFilter->GetOutput() );
+  std::string otsuFilename = segmentationDir + argv[1];
+  otsuFilename.erase(otsuFilename.end()-4, otsuFilename.end());
+  otsuFilename += "_otsu.png";
+  writer->SetFileName(otsuFilename);
+  writer->Update();
 
   typedef unsigned short ComponentPixelType;
   typedef itk::Image< ComponentPixelType, Dimension >  ComponentImageType;
@@ -100,11 +111,18 @@ int main( int argc, char * argv[] )
   ThresholdFilterType::Pointer thresholder = ThresholdFilterType::New();
   thresholder->SetLowerThreshold(1);
   thresholder->SetUpperThreshold(1);
-  thresholder->SetOutsideValue(outsideValue);
-  thresholder->SetInsideValue(insideValue);
+  thresholder->SetOutsideValue(0);
+  thresholder->SetInsideValue(255);
 
   thresholder->SetInput( relabeler->GetOutput() );
   thresholder->Update();
+
+  writer->SetInput( thresholder->GetOutput() );
+  std::string componentFilename = segmentationDir + argv[1];
+  componentFilename.erase(componentFilename.end()-4, componentFilename.end());
+  componentFilename += "_largest_component.png";
+  writer->SetFileName(componentFilename);
+  writer->Update();
 
   typedef std::vector< itk::SizeValueType > SizesInPixelsType;
   const SizesInPixelsType & sizesInPixels = relabeler->GetSizeOfObjectsInPixels();
