@@ -27,9 +27,17 @@ for x, y in north_curve:
   y_signal.append(y)
   x_signal.append(x)
 
-yfft = fftpack.fftshift(fft(y_signal))
+y_mean = sum(y_signal)/len(y_signal)
+y_normal_signal = [(y - y_mean) for y in y_signal]
 
-plt.semilogy(2.0/N * np.abs(yfft))
+plt.plot(y_signal)
+plt.plot(y_normal_signal)
+plt.grid()
+plt.show()
+
+yfft = fft(y_normal_signal)
+
+plt.semilogy(2.0/N * np.abs(fftpack.fftshift(yfft)))
 plt.grid()
 plt.show()
 
