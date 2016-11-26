@@ -7,7 +7,7 @@ filename = iter(filenames)
 def setup():
     global img
     size(1000, 1000)
-    frame.setResizable(True)
+    # surface.setResizable(True)
     
 def loadNextImageAndResize():
     global inputpath
@@ -16,12 +16,17 @@ def loadNextImageAndResize():
     name = inputpath + filename.next()
     img = loadImage(name)
     print name, img.width, img.height
-    frame.setSize(1000 * img.width/img.height, 1000)
+    # surface.setSize(1000 * img.width/img.height, 1000)
             
 def mousePressed():
     loadNextImageAndResize()
 
 def draw():
-    global img
-    loadNextImageAndResize()
-    image(img, 0, 0, 1000 * img.width/img.height, 1000)
+    background(128)
+    name = inputpath + filename.next()
+    img = loadImage(name)
+    print name, img.width, img.height
+    rescaledWidth = 1000 * img.width/img.height
+    rescaledHeight = 1000
+    newCenterX = (1000 - rescaledWidth) / 2
+    image(img, newCenterX, 0, rescaledWidth, rescaledHeight)
