@@ -8,6 +8,7 @@ ImageAnalyzer::ImageAnalyzer() {
   m_ConnectedComponents = ConnectedComponentImageFilterType::New();
   m_RelabelComponents = RelabelComponentsFilterType::New();
   m_Thresholder = ThresholdFilterType::New();
+  m_LinearScale = 1.0;
 }
 
 
@@ -58,6 +59,26 @@ void ImageAnalyzer::ExtractLargestConnectedComponentImage() {
   m_Thresholder->SetOutsideValue(0);
   m_Thresholder->SetInsideValue(255);
   m_Thresholder->Update();
+}
+
+void ImageAnalyzer::ComputeLinearScaleFromRuler() {
+  typedef std::vector< itk::SizeValueType > SizesInPixelsType;
+  const SizesInPixelsType & sizesInPixels = m_RelabelComponents->GetSizeOfObjectsInPixels();
+
+  if ( sizesInPixels.size() == 0 ) {
+    std::cerr << "ERROR: No connected component was detected" << std::endl;
+    return;
+  }
+
+  std::cout << "Number of pixels in largest component = " << sizesInPixels[0] << std::endl;
+
+  if ( sizesInPixels.size() == 1 || sizesInPixels[1] == 0 ) {
+    std::cerr << "ERROR: Ruler was not detected" << std::endl;
+    return;
+  }
+
+  std::cout << "Number of pixels in second  component = " << sizesInPixels[1] << std::endl;
+  m_LinearScale = std::sqrt(sizesInPixels[1]);
 }
 
 void ImageAnalyzer::WriteLargestConnectedComponentImage() {

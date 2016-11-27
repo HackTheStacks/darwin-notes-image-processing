@@ -56,6 +56,8 @@ private:
   std::string m_OutputCurvesDir;
   std::string m_SegmentationDir;
 
+  double m_LinearScale;
+
 public:
 
   ImageAnalyzer();
@@ -75,6 +77,8 @@ public:
   void ExtractLargestConnectedComponentImage();
 
   void WriteLargestConnectedComponentImage();
+
+  void ComputeLinearScaleFromRuler();
 
 };
 
