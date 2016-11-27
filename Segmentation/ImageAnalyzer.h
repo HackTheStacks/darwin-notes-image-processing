@@ -32,12 +32,16 @@ public:
 
 private:
 
-  std::string m_InputFilename;
-
   ReaderType::Pointer m_ImageReader;
   WriterType::Pointer m_ImageWriter;
   OtsuFilterType::Pointer m_OtsuFilter;
 
+  std::string m_BaseImageDir;
+  std::string m_BaseImageFilename;
+  std::string m_InputFilename;
+  std::string m_InputImageDir;
+  std::string m_OutputCurvesDir;
+  std::string m_SegmentationDir;
 
 public:
 
@@ -45,11 +49,15 @@ public:
 
   ~ImageAnalyzer();
 
+  void SetBaseDirectory(const std::string & directory);
+
   void SetInputFilename(const std::string & filename);
 
   void ReadInputImage();
 
   void ThresholdInputImage();
+
+  void WriteThresholdedImage();
 
 };
 

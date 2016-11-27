@@ -11,14 +11,14 @@ int main( int argc, char * argv[] )
 
   // baseImageDir in cloud server: "/data/amnh/darwin"
   std::string baseImageDir = "/home/ibanez/data/amnh/darwin_notes/";
-  std::string inputImageDir = baseImageDir + "images/";
-  std::string inputFilename = inputImageDir + argv[1];
 
   ImageAnalyzer analyzer;
 
-  analyzer.SetInputFilename(inputFilename);
+  analyzer.SetBaseDirectory(baseImageDir);
+  analyzer.SetInputFilename(argv[1]);
   analyzer.ReadInputImage();
   analyzer.ThresholdInputImage();
+  analyzer.WriteThresholdedImage();
 
   return EXIT_SUCCESS;
 }
