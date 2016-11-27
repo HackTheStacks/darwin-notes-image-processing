@@ -48,6 +48,8 @@ public:
   typedef itk::OtsuMultipleThresholdsImageFilter<
     VerticalCountImageType, VerticalCountImageType >  OtsuMultipleFilterType;
 
+  typedef unsigned short ContourCoordinateType;
+
 private:
 
   ReaderType::Pointer m_ImageReader;
@@ -70,6 +72,9 @@ private:
 
   VerticalCountImageType::IndexType m_LeftMarginIndex;
   VerticalCountImageType::IndexType m_RightMarginIndex;
+
+  std::vector< ContourCoordinateType > m_NorthContour;
+  std::vector< ContourCoordinateType > m_SouthContour;
 
 public:
 
@@ -102,6 +107,11 @@ public:
   void WriteVerticalCountValues();
 
   void FindImageMargins();
+
+  void ExtractNorthSouthContours();
+
+  void WriteNorthSouthContours();
+
 };
 
 #endif
