@@ -5,8 +5,9 @@ ImageAnalyzer::ImageAnalyzer() {
   m_ImageReader = ReaderType::New();
   m_ImageWriter = WriterType::New();
   m_OtsuFilter = OtsuFilterType::New();
-
-  m_OtsuFilter->SetInput(m_ImageReader->GetOutput());
+  m_ConnectedComponents = ConnectedComponentImageFilterType::New();
+  m_RelabelComponents = RelabelComponentsFilterType::New();
+  m_Thresholder = ThresholdFilterType::New();
 }
 
 
@@ -31,6 +32,7 @@ void ImageAnalyzer::ReadInputImage() {
 }
 
 void ImageAnalyzer::ThresholdInputImage() {
+  m_OtsuFilter->SetInput(m_ImageReader->GetOutput());
   m_OtsuFilter->SetOutsideValue(255);
   m_OtsuFilter->SetInsideValue(0);
   m_OtsuFilter->Update();
@@ -43,6 +45,26 @@ void ImageAnalyzer::WriteThresholdedImage() {
   filename.erase(filename.end()-4, filename.end());
   filename += "_otsu.png";
   m_ImageWriter->SetInput(m_OtsuFilter->GetOutput());
+  m_ImageWriter->SetFileName(filename);
+  m_ImageWriter->Update();
+}
+
+void ImageAnalyzer::ExtractLargestConnectedComponentImage() {
+  m_ConnectedComponents->SetInput(m_OtsuFilter->GetOutput());
+  m_RelabelComponents->SetInput(m_ConnectedComponents->GetOutput());
+  m_Thresholder->SetInput(m_RelabelComponents->GetOutput());
+  m_Thresholder->SetLowerThreshold(1);
+  m_Thresholder->SetUpperThreshold(1);
+  m_Thresholder->SetOutsideValue(0);
+  m_Thresholder->SetInsideValue(255);
+  m_Thresholder->Update();
+}
+
+void ImageAnalyzer::WriteLargestConnectedComponentImage() {
+  std::string filename = m_SegmentationDir + m_BaseImageFilename;
+  filename.erase(filename.end()-4, filename.end());
+  filename += "_largest_component.png";
+  m_ImageWriter->SetInput(m_Thresholder->GetOutput());
   m_ImageWriter->SetFileName(filename);
   m_ImageWriter->Update();
 }
