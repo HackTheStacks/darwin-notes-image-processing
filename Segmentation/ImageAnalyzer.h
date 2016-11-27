@@ -40,6 +40,14 @@ public:
 
   typedef itk::BinaryThresholdImageFilter<
                ComponentImageType, OutputImageType >  ThresholdFilterType;
+
+  typedef unsigned short CountPixelType;
+  typedef itk::Image< CountPixelType, 1 > VerticalCountImageType;
+  typedef itk::ImageRegionIterator< VerticalCountImageType > CountIteratorType;
+
+  typedef itk::OtsuMultipleThresholdsImageFilter<
+    VerticalCountImageType, VerticalCountImageType >  OtsuMultipleFilterType;
+
 private:
 
   ReaderType::Pointer m_ImageReader;
@@ -48,6 +56,8 @@ private:
   ConnectedComponentImageFilterType::Pointer m_ConnectedComponents;
   RelabelComponentsFilterType::Pointer m_RelabelComponents;
   ThresholdFilterType::Pointer m_Thresholder;
+  VerticalCountImageType::Pointer m_VerticalCountImage;
+  OtsuMultipleFilterType::Pointer m_OtsuMultipleFilter;
 
   std::string m_BaseImageDir;
   std::string m_BaseImageFilename;
@@ -57,6 +67,9 @@ private:
   std::string m_SegmentationDir;
 
   double m_LinearScale;
+
+  VerticalCountImageType::IndexType m_LeftMarginIndex;
+  VerticalCountImageType::IndexType m_RightMarginIndex;
 
 public:
 
@@ -80,6 +93,15 @@ public:
 
   void ComputeLinearScaleFromRuler();
 
+  void ComputeVerticalProjectionImage();
+
+  void ComputeMarginsWithOtsuThresholds(unsigned int);
+
+  void WriteOtsuMultipleThresholds();
+
+  void WriteVerticalCountValues();
+
+  void FindImageMargins();
 };
 
 #endif
