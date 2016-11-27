@@ -29,12 +29,25 @@ public:
   typedef itk::ImageFileReader< InputImageType >  ReaderType;
   typedef itk::ImageFileWriter< OutputImageType >  WriterType;
 
+  typedef unsigned short ComponentPixelType;
+  typedef itk::Image< ComponentPixelType, 2 >  ComponentImageType;
 
+  typedef itk::ConnectedComponentImageFilter <InputImageType, ComponentImageType >
+    ConnectedComponentImageFilterType;
+
+  typedef itk::RelabelComponentImageFilter<
+               ComponentImageType, ComponentImageType >  RelabelComponentsFilterType;
+
+  typedef itk::BinaryThresholdImageFilter<
+               ComponentImageType, OutputImageType >  ThresholdFilterType;
 private:
 
   ReaderType::Pointer m_ImageReader;
   WriterType::Pointer m_ImageWriter;
   OtsuFilterType::Pointer m_OtsuFilter;
+  ConnectedComponentImageFilterType::Pointer m_ConnectedComponents;
+  RelabelComponentsFilterType::Pointer m_RelabelComponents;
+  ThresholdFilterType::Pointer m_Thresholder;
 
   std::string m_BaseImageDir;
   std::string m_BaseImageFilename;
@@ -58,6 +71,10 @@ public:
   void ThresholdInputImage();
 
   void WriteThresholdedImage();
+
+  void ExtractLargestConnectedComponentImage();
+
+  void WriteLargestConnectedComponentImage();
 
 };
 

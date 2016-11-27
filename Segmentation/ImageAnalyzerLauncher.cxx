@@ -16,9 +16,14 @@ int main( int argc, char * argv[] )
 
   analyzer.SetBaseDirectory(baseImageDir);
   analyzer.SetInputFilename(argv[1]);
+
   analyzer.ReadInputImage();
+
   analyzer.ThresholdInputImage();
   analyzer.WriteThresholdedImage();
+
+  analyzer.ExtractLargestConnectedComponentImage();
+  analyzer.WriteLargestConnectedComponentImage();
 
   return EXIT_SUCCESS;
 }
