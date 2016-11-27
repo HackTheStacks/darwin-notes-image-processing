@@ -9,6 +9,7 @@ ImageAnalyzer::ImageAnalyzer() {
   m_RelabelComponents = RelabelComponentsFilterType::New();
   m_Thresholder = ThresholdFilterType::New();
   m_VerticalCountImage = VerticalCountImageType::New();
+  m_OtsuMultipleFilter = OtsuMultipleFilterType::New();
   m_LinearScale = 1.0;
 }
 
@@ -140,16 +141,13 @@ void ImageAnalyzer::ComputeVerticalProjectionImage() {
 }
 
 void ImageAnalyzer::ComputeMarginsWithOtsuThresholds(unsigned int numberOfThresholds) {
+  m_OtsuMultipleFilter->SetInput( m_VerticalCountImage );
+  m_OtsuMultipleFilter->SetNumberOfThresholds(numberOfThresholds);
+  m_OtsuMultipleFilter->Update();
 
-  typedef itk::OtsuMultipleThresholdsImageFilter<
-    VerticalCountImageType, VerticalCountImageType >  OtsuMultipleFilterType;
+  WriteOtsuMultipleThresholds();
 
-  OtsuMultipleFilterType::Pointer otsuMultipleFilter = OtsuMultipleFilterType::New();
-  otsuMultipleFilter->SetInput( m_VerticalCountImage );
-  otsuMultipleFilter->SetNumberOfThresholds(numberOfThresholds);
-  otsuMultipleFilter->Update();
-
-  VerticalCountImageType::Pointer otsuOutput = otsuMultipleFilter->GetOutput();
+  VerticalCountImageType::Pointer otsuOutput = m_OtsuMultipleFilter->GetOutput();
 
   CountIteratorType bandsIt( otsuOutput, otsuOutput->GetLargestPossibleRegion() );
   bandsIt.GoToBegin();
@@ -173,6 +171,17 @@ void ImageAnalyzer::ComputeMarginsWithOtsuThresholds(unsigned int numberOfThresh
   // Add a safety band of 100 pixels
   m_LeftMarginIndex[0] += 100;
   m_RightMarginIndex[0] -= 100;
+}
+
+void ImageAnalyzer::WriteOtsuMultipleThresholds() {
+  OtsuMultipleFilterType::ThresholdVectorType thresholds = m_OtsuMultipleFilter->GetThresholds();
+  std::cout << "Otsu Multiple Thresholds = ";
+  OtsuMultipleFilterType::ThresholdVectorType::const_iterator trit = thresholds.begin();
+  while(trit != thresholds.end()) {
+    std::cout << *trit << " ";
+    ++trit;
+    }
+  std::cout << std::endl;
 }
 
 void ImageAnalyzer::FindImageMargins() {

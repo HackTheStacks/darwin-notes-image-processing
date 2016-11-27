@@ -45,6 +45,9 @@ public:
   typedef itk::Image< CountPixelType, 1 > VerticalCountImageType;
   typedef itk::ImageRegionIterator< VerticalCountImageType > CountIteratorType;
 
+  typedef itk::OtsuMultipleThresholdsImageFilter<
+    VerticalCountImageType, VerticalCountImageType >  OtsuMultipleFilterType;
+
 private:
 
   ReaderType::Pointer m_ImageReader;
@@ -54,6 +57,7 @@ private:
   RelabelComponentsFilterType::Pointer m_RelabelComponents;
   ThresholdFilterType::Pointer m_Thresholder;
   VerticalCountImageType::Pointer m_VerticalCountImage;
+  OtsuMultipleFilterType::Pointer m_OtsuMultipleFilter;
 
   std::string m_BaseImageDir;
   std::string m_BaseImageFilename;
@@ -92,6 +96,10 @@ public:
   void ComputeVerticalProjectionImage();
 
   void ComputeMarginsWithOtsuThresholds(unsigned int);
+
+  void WriteOtsuMultipleThresholds();
+
+  void WriteVerticalCountValues();
 
   void FindImageMargins();
 };
