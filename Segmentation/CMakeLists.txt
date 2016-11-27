@@ -12,3 +12,7 @@ target_link_libraries(OtsuThresholdImageFilter ${ITK_LIBRARIES})
 
 add_executable(ImageLinearIteratorWithIndex ImageLinearIteratorWithIndex.cxx)
 target_link_libraries(ImageLinearIteratorWithIndex ${ITK_LIBRARIES})
+
+add_executable(ImageAnalyzer ImageAnalyzer.cxx ImageAnalyzerLauncher.cxx)
+target_link_libraries(ImageAnalyzer ${ITK_LIBRARIES})
+
