@@ -8,7 +8,7 @@ from subprocess import call
 # inputpath = '/data/amnh/darwin/images'
 # segment_exe = '/home/luis_ibanez/bin/darwin-notes-image-processing/Release/Segmentation/ImageToEdges'
 inputpath = '/home/ibanez/data/amnh/darwin_notes/images'
-segment_exe = '/home/ibanez/bin/amnh/darwin/darwin-notes-image-processing/Release/Segmentation/ImageToEdges'
+segment_exe = '/home/ibanez/bin/amnh/darwin/darwin-notes-image-processing/Release/Segmentation/ImageAnalyzer'
 
 def handle_file(filename):
     call([segment_exe, filename])
