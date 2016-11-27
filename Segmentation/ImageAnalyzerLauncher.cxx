@@ -27,5 +27,7 @@ int main( int argc, char * argv[] )
 
   analyzer.ComputeLinearScaleFromRuler();
 
+  analyzer.FindImageMargins();
+
   return EXIT_SUCCESS;
 }

@@ -8,6 +8,7 @@ ImageAnalyzer::ImageAnalyzer() {
   m_ConnectedComponents = ConnectedComponentImageFilterType::New();
   m_RelabelComponents = RelabelComponentsFilterType::New();
   m_Thresholder = ThresholdFilterType::New();
+  m_VerticalCountImage = VerticalCountImageType::New();
   m_LinearScale = 1.0;
 }
 
@@ -90,3 +91,94 @@ void ImageAnalyzer::WriteLargestConnectedComponentImage() {
   m_ImageWriter->Update();
 }
 
+void ImageAnalyzer::ComputeVerticalProjectionImage() {
+  typedef itk::ImageLinearConstIteratorWithIndex< InputImageType > ConstIteratorType;
+
+  InputImageType::ConstPointer componentImage = m_Thresholder->GetOutput();
+
+  VerticalCountImageType::IndexType start;
+  start[0] = 0;
+
+  VerticalCountImageType::SizeType  size;
+  size[0]  = componentImage->GetRequestedRegion().GetSize()[0];
+
+  VerticalCountImageType::RegionType region;
+  region.SetSize( size );
+  region.SetIndex( start );
+
+  m_VerticalCountImage = VerticalCountImageType::New();
+  m_VerticalCountImage->SetRegions( region );
+  m_VerticalCountImage->Allocate();
+
+  CountIteratorType outputIt( m_VerticalCountImage, m_VerticalCountImage->GetLargestPossibleRegion() );
+  outputIt.GoToBegin();
+
+  ConstIteratorType inputIt( componentImage, componentImage->GetRequestedRegion() );
+
+  inputIt.SetDirection(1); // walk faster along the vertical direction.
+
+  std::vector<unsigned short> counter;
+
+  unsigned short line = 0;
+  for ( inputIt.GoToBegin(); ! inputIt.IsAtEnd(); inputIt.NextLine() )
+    {
+    unsigned short count = 0;
+    inputIt.GoToBeginOfLine();
+    while ( ! inputIt.IsAtEndOfLine() )
+      {
+      InputPixelType value = inputIt.Get();
+      if (value == 255 ) {
+        ++count;
+        }
+      ++inputIt;
+      }
+    outputIt.Set(count);
+    ++outputIt;
+    counter.push_back(count);
+    ++line;
+    }
+}
+
+void ImageAnalyzer::ComputeMarginsWithOtsuThresholds(unsigned int numberOfThresholds) {
+
+  typedef itk::OtsuMultipleThresholdsImageFilter<
+    VerticalCountImageType, VerticalCountImageType >  OtsuMultipleFilterType;
+
+  OtsuMultipleFilterType::Pointer otsuMultipleFilter = OtsuMultipleFilterType::New();
+  otsuMultipleFilter->SetInput( m_VerticalCountImage );
+  otsuMultipleFilter->SetNumberOfThresholds(numberOfThresholds);
+  otsuMultipleFilter->Update();
+
+  VerticalCountImageType::Pointer otsuOutput = otsuMultipleFilter->GetOutput();
+
+  CountIteratorType bandsIt( otsuOutput, otsuOutput->GetLargestPossibleRegion() );
+  bandsIt.GoToBegin();
+  CountPixelType currentValue = bandsIt.Get();
+  while (!bandsIt.IsAtEnd()) {
+    if (bandsIt.Get() != currentValue) {
+      m_LeftMarginIndex = bandsIt.GetIndex();
+      currentValue = bandsIt.Get();
+      break;
+      }
+    ++bandsIt;
+    }
+  while (!bandsIt.IsAtEnd()) {
+    if (bandsIt.Get() != currentValue) {
+      m_RightMarginIndex = bandsIt.GetIndex();
+      break;
+      }
+    ++bandsIt;
+    }
+
+  // Add a safety band of 100 pixels
+  m_LeftMarginIndex[0] += 100;
+  m_RightMarginIndex[0] -= 100;
+}
+
+void ImageAnalyzer::FindImageMargins() {
+  ComputeVerticalProjectionImage();
+  ComputeMarginsWithOtsuThresholds(2);
+  if (m_LeftMarginIndex[0] > m_RightMarginIndex[0]) {
+    ComputeMarginsWithOtsuThresholds(1);
+  }
+}
