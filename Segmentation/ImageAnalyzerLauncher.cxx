@@ -29,5 +29,8 @@ int main( int argc, char * argv[] )
 
   analyzer.FindImageMargins();
 
+  analyzer.ExtractNorthSouthContours();
+  analyzer.WriteNorthSouthContours();
+
   return EXIT_SUCCESS;
 }

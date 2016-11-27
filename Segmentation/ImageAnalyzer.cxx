@@ -171,6 +171,9 @@ void ImageAnalyzer::ComputeMarginsWithOtsuThresholds(unsigned int numberOfThresh
   // Add a safety band of 100 pixels
   m_LeftMarginIndex[0] += 100;
   m_RightMarginIndex[0] -= 100;
+
+  std::cout << "Left  Margin = " << m_LeftMarginIndex[0] << std::endl;
+  std::cout << "Right Margin = " << m_RightMarginIndex[0] << std::endl;
 }
 
 void ImageAnalyzer::WriteOtsuMultipleThresholds() {
@@ -190,4 +193,71 @@ void ImageAnalyzer::FindImageMargins() {
   if (m_LeftMarginIndex[0] > m_RightMarginIndex[0]) {
     ComputeMarginsWithOtsuThresholds(1);
   }
+}
+
+void ImageAnalyzer::ExtractNorthSouthContours() {
+  m_NorthContour.clear();
+  m_SouthContour.clear();
+  ContourCoordinateType xpos = 0;
+
+  typedef itk::ImageLinearConstIteratorWithIndex< InputImageType > ConstIteratorType;
+  InputImageType::ConstPointer inputImage = m_Thresholder->GetOutput();
+  ConstIteratorType rangeIt( inputImage, inputImage->GetRequestedRegion() );
+  rangeIt.SetDirection(1); // walk faster along the vertical direction.
+
+  for (rangeIt.GoToBegin(); ! rangeIt.IsAtEnd(); rangeIt.NextLine(), ++xpos )
+    {
+    ContourCoordinateType bottom = 0;
+    ContourCoordinateType top = 0;
+    rangeIt.GoToBeginOfLine();
+    while ( ! rangeIt.IsAtEndOfLine() )
+      {
+      InputPixelType value = rangeIt.Get();
+      if (value == 255 ) {
+        if ( bottom == 0 ) {
+          bottom = rangeIt.GetIndex()[1];
+          }
+        top = rangeIt.GetIndex()[1];
+        }
+      ++rangeIt;
+      }
+
+    if (xpos >= m_LeftMarginIndex[0] && xpos <= m_RightMarginIndex[0]) {
+      m_NorthContour.push_back(top);
+      m_SouthContour.push_back(bottom);
+      }
+    }
+}
+
+void ImageAnalyzer::WriteNorthSouthContours() {
+  std::string northFilename = m_OutputCurvesDir + m_BaseImageFilename;
+  northFilename.erase(northFilename.end()-4, northFilename.end());
+  northFilename += "_north.csv";
+
+  std::string southFilename = m_OutputCurvesDir + m_BaseImageFilename;
+  southFilename.erase(southFilename.end()-4, southFilename.end());
+  southFilename += "_south.csv";
+
+  std::cout << "northFilename " << northFilename << std::endl;
+  std::cout << "southFilename " << southFilename << std::endl;
+
+  std::ofstream northFile(northFilename.c_str());
+  std::vector< ContourCoordinateType >::const_iterator curveIt = m_NorthContour.begin();
+  ContourCoordinateType xpos = m_LeftMarginIndex[0];
+  while (curveIt != m_NorthContour.end()) {
+    northFile << xpos/m_LinearScale << ", " << *curveIt/m_LinearScale << std::endl;
+    ++xpos;
+    ++curveIt;
+  }
+  northFile.close();
+
+  std::ofstream southFile(southFilename.c_str());
+  curveIt = m_SouthContour.begin();
+  xpos = m_LeftMarginIndex[0];
+  while (curveIt != m_SouthContour.end()) {
+    southFile << xpos/m_LinearScale << ", " << *curveIt/m_LinearScale << std::endl;
+    ++xpos;
+    ++curveIt;
+  }
+  southFile.close();
 }
