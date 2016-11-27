@@ -25,5 +25,7 @@ int main( int argc, char * argv[] )
   analyzer.ExtractLargestConnectedComponentImage();
   analyzer.WriteLargestConnectedComponentImage();
 
+  analyzer.ComputeLinearScaleFromRuler();
+
   return EXIT_SUCCESS;
 }
