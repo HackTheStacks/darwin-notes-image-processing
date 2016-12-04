@@ -19,6 +19,7 @@ def similarity_score(curve1_filename, curve2_filename):
     fft1 = sio.loadmat(curve1_name)['fft']
     fft2 = sio.loadmat(curve2_name)['fft']
 
+    # zero out scaling and rotation components
     fft1[0][0] = 0
     fft1[0][1] = 0
     fft2[0][0] = 0
