@@ -40,7 +40,7 @@ for curve2_filename in input_files:
     sim_score_map[curve2_filename] = sim_score 
 
 # sort
-final_sorted_results = sorted(sim_score_map.items(), key=operator.itemgetter(1), reverse=True)
+final_sorted_results = sorted(sim_score_map.items(), key=operator.itemgetter(1), reverse=True)[:100]
 fft_sim_file = open(fft_similarity_filename, 'w')
 stringified_results = [stringify(x) for x in final_sorted_results]
 fft_sim_file.write('\n'.join(stringified_results))
