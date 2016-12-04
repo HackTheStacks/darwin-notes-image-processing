@@ -5,8 +5,8 @@ from scipy.fftpack import fft
 import scipy.io as io
 import sys
 
-#base_dir = '/data/amnh/darwin_notes/'
-base_dir = '/home/queenjin/sandbox/amnh/matchural/'
+base_dir = '/data/amnh/darwin_notes/'
+#base_dir = '/home/queenjin/sandbox/amnh/matchural/'
 input_curves_dir = base_dir + 'image_csvs/'
 curves_fft_dir = base_dir + 'image_csvs_fft/'
 curve_filename = sys.argv[1]
