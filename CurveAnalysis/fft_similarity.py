@@ -5,8 +5,8 @@ import scipy.io as sio
 import os
 import operator
 
-#base_dir = '/home/queenjin/sandbox/amnh/matchural/'
-base_dir = '/data/amnh/darwin/'
+base_dir = '/home/queenjin/sandbox/amnh/matchural/'
+#base_dir = '/data/amnh/darwin/'
 curves_fft_dir = base_dir + 'image_csvs_fft/'
 fft_similarity_dir = base_dir + 'fft_similarity/'
 
@@ -19,6 +19,10 @@ def similarity_score(curve1_filename, curve2_filename):
     fft1 = sio.loadmat(curve1_name)['fft']
     fft2 = sio.loadmat(curve2_name)['fft']
 
+    fft1[0][0] = 0
+    fft1[0][1] = 0
+    fft2[0][0] = 0
+    fft2[0][1] = 0
     norm1 = np.linalg.norm(fft1)
     norm2 = np.linalg.norm(fft2)
     dot_product = np.absolute(np.vdot(fft1, fft2))
