@@ -30,7 +30,7 @@ for curve_filename in input_files:
     fft_norm_map[curve_filename] = norm_value 
 
 # sort by magnitude of the fft norm
-final_sorted_results = sorted(fft_norm_map.items(), key=operator.itemgetter(1), reverse=True)[:100]
+final_sorted_results = sorted(fft_norm_map.items(), key=operator.itemgetter(1), reverse=True)
 fft_sim_file = open(fft_norm_filename, 'w')
 stringified_results = [stringify(x) for x in final_sorted_results]
 fft_sim_file.write('\n'.join(stringified_results))
