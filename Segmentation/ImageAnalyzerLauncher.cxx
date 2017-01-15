@@ -9,8 +9,7 @@ int main( int argc, char * argv[] )
     return EXIT_FAILURE;
     }
 
-  // baseImageDir in cloud server: "/data/amnh/darwin"
-  std::string baseImageDir = "/home/ibanez/data/amnh/darwin_notes/";
+  std::string baseImageDir = "/data/amnh/darwin/";
 
   ImageAnalyzer analyzer;
 
